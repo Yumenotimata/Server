@@ -6,11 +6,12 @@
 #include <unistd.h>
 #include <errno.h>
 
-#define SERVER_ADDR "127.0.0.1"
-#define SIZE (5*1024)
+#define SERVER_ADDR "192.168.82.66"
+#define SIZE (128*1024)
 
 int parseRequestMessage(char *parseMessage,char *request,char *target);
 int httpRespond(int sendSocket);
+unsigned int getFileSize(char *path);
 int rcvSocket, sendSocket;
 int main(void) {
 
@@ -50,20 +51,20 @@ int main(void) {
     }
 
     /* listen socket */
-    listen(rcvSocket, 2);
-
+    listen(rcvSocket, 5);
+    while(1)
+    {
     /* accept TCP connection from client */
     len = sizeof(client);
     sendSocket = accept(rcvSocket,NULL,NULL);
 
 
-    /* send message *///write(sendSocket,"HTTP1.1 404 Not Found",15);
+    /* send message */
     httpRespond(sendSocket);
-  
+    }
     /* close TCP session */
-    close(sendSocket);
     close(rcvSocket);
-
+    
     return 0;
 }
 
@@ -114,8 +115,58 @@ int httpRespond(int sendSocket)
         parseRequestMessage(requestMessage,request,target);
         printf("request massage :%s %s\n",request,target);
         
+        char *header = "HTTP/1.1 200 OK\n"
+        "Content-type: text/html\n"						"\n";
+        send(sendSocket,header,strlen(header),0);
 
+
+        unsigned int fileSize = getFileSize("index.html");
+        printf("fileSize:%d\n",fileSize);
+        FILE *f;
+        f = fopen("index.html","r");
+        char fileData[SIZE] = {0};
+        fread(fileData,1,fileSize,f);
+        printf("file data is %s..\n",fileData);
+        send(sendSocket,fileData,fileSize,0);
+        fclose(f);
+        printf("send message\n");
+
+
+// char *headerjs = "HTTP/1.1 200 OK\n"
+//         "Content-type: text/js\n"						"\n";
+//         send(sendSocket,headerjs,strlen(headerjs),0);
+        
+//         FILE *fp;
+//         fp = fopen("text.js","r");
+//         char Java[SIZE] = {0};
+//         unsigned int JavaSize = getFileSize("text.js");
+//         fread(Java,1,JavaSize,fp);
+//         printf("\n%s\n",Java);
+//         send(sendSocket,Java,JavaSize,0);
+//         fclose(fp);
+
+        break;
     }     
+    close(sendSocket);
 
     return 0;
+}
+
+unsigned int getFileSize(char *path)
+{
+    int fileSize = 0;
+    int retSize = 0;
+    char tmpRead[SIZE];
+    FILE *f;
+
+    f = fopen(path,"r");
+    do
+    {
+        /* code */
+        fileSize = fread(tmpRead,1,1,f);
+        retSize ++;
+    } while (fileSize != 0);
+    fclose(f);
+
+    return retSize;
 }
