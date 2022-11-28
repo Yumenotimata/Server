@@ -1,0 +1,1 @@
+socket wo tyokusetu if ni tukawanai

@@ -1,64 +1,70 @@
-#include <stdio.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdlib.h>
+#include <arpa/inet.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#define SERVER_IP "127.0.0.1"
 
+#define SERVER_ADDR "127.0.0.1"
+#define SIZE (5*1024)
+
+int httpRepond(int sendSocket);
 
 int main(void) {
 
-    
-
     int rcvSocket, sendSocket;
-    struct sockaddr_in serverAddr,client;
+    struct sockaddr_in addr, client;
     int len;
-    printf("server started\n");
-    printf("\n");
+    int ret;
+    
     /* make socket */
     rcvSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if(rcvSocket == -1)
-    {
-        printf("socket error\n");
-    }
-    
-    printf("socket opended\n");
 
-    /* socket setting */
-    serverAddr.sin_family      = AF_INET;
-    serverAddr.sin_port        = htons(8080);
-    serverAddr.sin_addr.s_addr = inet_addr(SERVER_IP);
-
-    /* binding socket */    
-    if(bind(rcvSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
-    {
-        printf("bind error\n");
+    if (rcvSocket < 0) {
+        fprintf(stderr, "Error. Cannot make socket\n");
         return -1;
     }
+    
+    /* socket setting */
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(8080);
+    addr.sin_addr.s_addr = inet_addr(SERVER_ADDR);
 
-    printf("bind succeed\n");
+    /* binding socket */    
+    ret = bind(rcvSocket, (struct sockaddr *)&addr, sizeof(addr));
+    
+    if (ret < 0) {
+        fprintf(stderr, "Error. Cannot bind socket\n");
+        return -1;
+    }
 
     /* listen socket */
     listen(rcvSocket, 5);
 
     /* accept TCP connection from client */
     len = sizeof(client);
-    if(sendSocket = accept(rcvSocket,(struct sockaddr *)&client,&len) == -1)
-    {
-        printf("accept error\n");
-        return -1;
-    }
-
-    printf("accept succeed\n");
+    sendSocket = accept(rcvSocket,NULL,NULL);
 
     /* send message */
-    write(sendSocket, "HTTP1.1 300 OK", 14);
-
+    
+    httpRespond(sendSocket);
     /* close TCP session */
     close(sendSocket);
     close(rcvSocket);
 
     return 0;
+}
+
+int httpRespond(int sendSocket)
+{
+    int requestMessageSize;
+    char requestMessage[SIZE];
+    while(1)
+    {
+        printf("now receive...\n");
+        requestMessageSize = recv(sendSocket,requestMessage,SIZE,0);
+        requestMessage[requestMessageSize] = '\0';
+        printf("%s\n",requestMessage);
+        exit(1);
+    }
 }
